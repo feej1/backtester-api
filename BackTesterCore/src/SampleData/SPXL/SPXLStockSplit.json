@@ -1,0 +1,13 @@
+{
+    "symbol": "SPXL",
+    "data": [
+        {
+            "effective_date": "2017-05-01",
+            "split_factor": "4.0000"
+        },
+        {
+            "effective_date": "2013-04-02",
+            "split_factor": "3.0000"
+        }
+    ]
+}

@@ -1,0 +1,21 @@
+{
+    "symbol": "SPXS",
+    "data": [
+        {
+            "effective_date": "2021-01-11",
+            "split_factor": "0.1000"
+        },
+        {
+            "effective_date": "2017-05-01",
+            "split_factor": "0.2000"
+        },
+        {
+            "effective_date": "2013-08-20",
+            "split_factor": "0.2000"
+        },
+        {
+            "effective_date": "2011-02-24",
+            "split_factor": "0.2000"
+        }
+    ]
+}
