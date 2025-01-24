@@ -5,12 +5,19 @@ using Backtesting.Clients;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Configuration;
 using Backtesting.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
     .ConfigureServices( (context, services ) => {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
+        services.Configure<KestrelServerOptions>(options =>
+        {
+            options.AllowSynchronousIO = true;
+        });
 
         var alphaAdvantageClientSettings = new AlphaAdvantageApiClientSettings();
         alphaAdvantageClientSettings.ApiBaseUrl = context.Configuration["AlphaAdvantageApiClientSettingsApiBaseUrl"];
@@ -26,3 +33,6 @@ var host = new HostBuilder()
     .Build();
 
 host.Run();
+
+
+

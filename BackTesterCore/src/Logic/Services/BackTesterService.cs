@@ -1,16 +1,7 @@
 
-using System.Drawing.Text;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
 using Backtesting.Clients;
 using Backtesting.Models;
-using Google.Protobuf.WellKnownTypes;
-using Microsoft.AspNetCore.Hosting.StaticWebAssets;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.FileSystemGlobbing.Internal.PathSegments;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 
 namespace Backtesting.Services
 {
@@ -19,12 +10,7 @@ namespace Backtesting.Services
     public interface IBackTestingService
     {
 
-        public BackTestingResponse BackTest(Strategies strategy,
-            string bullTkr,
-            string bearTkr,
-            int lossStopPercentage,
-            DateTime startDate,
-            DateTime endDate);
+        public Task<BackTestingResponse> BackTest(IBacktestSettings settings);
     }
 
     public class BacktestingService : IBackTestingService
@@ -38,38 +24,165 @@ namespace Backtesting.Services
             _apiClient = apiClient;
         }
 
-        public BackTestingResponse BackTest(Strategies strategy,
-            string bullTkr,
-            string bearTkr,
-            int lossStopPercentage,
-            DateTime startDate,
-            DateTime endDate)
+        public async Task<BackTestingResponse> BackTest(IBacktestSettings settings)
         {
 
-            switch (strategy)
+            switch (settings.Strategy)
             {
                 case Strategies.MACD_CROSS:
                     {
-                        HandleMacdBacktest(bullTkr, bearTkr, lossStopPercentage, startDate, endDate);
-                        break;
+                        return await HandleBacktest(settings);
                     }
                 case Strategies.MOVING_AVERAGE_CROSS:
                     {
-                        HandleMovingAverageCross(bullTkr, lossStopPercentage, startDate, endDate);
-                        break;
+                        return await HandleMovingAverageCrossNew(settings);
                     }
                 case Strategies.BUY_AND_HOLD:
                     {
-                        HandleByAndHold(bullTkr, startDate, endDate);
-                        break;
+                        return await HandleBuyAndHoldNew(settings);
                     }
                 default:
                     throw new Exception("Strategy not implemented");
             }
+        }
 
+        private async Task<BackTestingResponse> HandleBacktest(IBacktestSettings settings)
+        {
+
+            if (!settings.AreValid())
+            {
+                _logger.LogError($"BacktesterService.HandleMacdBacktest(): Invalid Backtest Settings: {settings}");
+                return null;
+            }
+
+            Console.WriteLine("Hello this started");
+
+            // Holding asset
+            TimeSeries assetToHoldTimeSeriesData = null;
+            StockSplit assetToHoldStockSplitData = null;
+            List<AlphaAdvantageDividendPayoutData> assetToHoldDividentPayoutData = null;
+            IOrderedEnumerable<KeyValuePair<DateTime, TimeSeriesElement>> assetToHoldProcessedTimeSeriesData = null;
+
+            // Trading asset
+            TimeSeries assetToTradeTimeSeriesData = await settings.GetTradingAssetTimeSeries();
+            StockSplit assetToTradeStockSplitData = await settings.GetTradingAssetStockSplits();
+            List<AlphaAdvantageDividendPayoutData> assetToTradeDividendPayoutData = await settings.GetTradingAssetDividendPayouts();
+
+            // Tracking asset
+            TimeSeries assetToTrackTimeSeriesData = await settings.GetTrackingAssetTimeSeries();
+            StockSplit assetToTrackStockSplitData = await settings.GetTrackingAssetStockSplits();
+            if (settings.ShouldHoldAssetBetweenTrades())
+            {
+                assetToHoldTimeSeriesData = await settings.GetStaticHoldingAssetTimeSeries();
+                assetToHoldStockSplitData = await settings.GetStaticHoldingAssetStockSplits();
+                assetToHoldDividentPayoutData = await settings.GetStaticHoldingAssetDividendPayouts();
+                assetToHoldTimeSeriesData.CalculateAdjustedClose(assetToHoldStockSplitData);
+                assetToHoldProcessedTimeSeriesData = assetToHoldTimeSeriesData.Data.Where(x => x.Key >= settings.StartDate && x.Key <= settings.EndDate).OrderBy(x => x.Key);
+            }
+
+            assetToTrackTimeSeriesData.CalculateAdjustedClose(assetToTrackStockSplitData);
+            var assetToTrackProcessedTimeSeriesData = assetToTrackTimeSeriesData.Data.Where(x => x.Key >= settings.StartDate && x.Key <= settings.EndDate).OrderBy(x => x.Key);
+
+            IOrderedEnumerable<KeyValuePair<DateTime, TimeSeriesElement>> assetToTradeProcessedTimeSeriesData = null;
+            if (settings.AssetToTrackTicker == settings.AssetToTradeTicker)
+            {
+                assetToTradeProcessedTimeSeriesData = assetToTrackProcessedTimeSeriesData;
+            }
+            else{
+                assetToTradeTimeSeriesData.CalculateAdjustedClose(assetToTradeStockSplitData);
+                var assetToTradeProcessedTimSeriesData = assetToTradeTimeSeriesData.Data.Where(x => x.Key >= settings.StartDate && x.Key <= settings.EndDate).OrderBy(x => x.Key);
+            }
+
+            var portfolio = new Portfolio();
+            var backTestMetrics = new BacktestMetrics(
+                assetToTrackProcessedTimeSeriesData.First().Key,
+                assetToTrackProcessedTimeSeriesData.Last().Key,
+                portfolio.GetBuyingPower());
+            var tradingStrategyHandler = settings.GetTradingStrategyHandler();
+
+            var assetToTrackItr = assetToTrackProcessedTimeSeriesData.GetEnumerator();
+            var loop = assetToTrackItr.MoveNext();
+            
+            while (loop)
+            {
+                // update stats
+                tradingStrategyHandler.UpdateIndicators(assetToTrackItr.Current.Value.AdjustedClose);
+                if (tradingStrategyHandler.IsBuyConditionMet())
+                {
+                    assetToTradeProcessedTimeSeriesData!.ToDictionary().TryGetValue(assetToTrackItr.Current.Key, out var assetToTradeDataPoint); 
+                    if (settings.ShouldHoldAssetBetweenTrades() && portfolio.OwnsStock(settings.StaticHoldingTicker))
+                    {
+                        assetToHoldProcessedTimeSeriesData!.ToDictionary().TryGetValue(assetToTrackItr.Current.Key, out var assetToHoldDataPoint); 
+                        portfolio.LiquidateIfOwnsStock(settings.StaticHoldingTicker, assetToHoldDataPoint.AdjustedClose);
+                        
+                        var buyPrice = portfolio.GetPriceOfMostRecentStockPurchase();
+                        var amountTraded = portfolio.GetNumberOfSharesFromLastSell();
+                        backTestMetrics.UpdateTradeStatistics(buyPrice, assetToHoldDataPoint.AdjustedClose, amountTraded, portfolio.GetBuyingPower());
+                    }
+                    portfolio.BuyAsMuchStockAsPossible(settings.AssetToTradeTicker, assetToTradeDataPoint.AdjustedClose);
+                }
+                else if (tradingStrategyHandler.IsSellConditionMet())
+                {
+                    assetToTradeProcessedTimeSeriesData!.ToDictionary().TryGetValue(assetToTrackItr.Current.Key, out var assetToTradeDataPoint); 
+                    portfolio.LiquidateIfOwnsStock(settings.AssetToTradeTicker, assetToTradeDataPoint.AdjustedClose);
+
+                    var buyPrice = portfolio.GetPriceOfMostRecentStockPurchase();
+                    var amountTraded = portfolio.GetNumberOfSharesFromLastSell();
+                    backTestMetrics.UpdateTradeStatistics(buyPrice, assetToTradeDataPoint.AdjustedClose, amountTraded, portfolio.GetBuyingPower());
+                    
+                    if (settings.ShouldHoldAssetBetweenTrades())
+                    {
+                        assetToHoldProcessedTimeSeriesData!.ToDictionary().TryGetValue(assetToTrackItr.Current.Key, out var assetToHoldDataPoint); 
+                        portfolio.BuyAsMuchStockAsPossible(settings.StaticHoldingTicker, assetToHoldDataPoint.AdjustedClose);
+                    }
+
+                }
+
+                backTestMetrics.UpdatePercentTimeInvested(portfolio.OwnsAnyStock());
+
+                loop = assetToTrackItr.MoveNext();
+
+                // should sell all stock on final trading day
+                if(!loop){
+                    if (portfolio.OwnsStock(settings.AssetToTradeTicker))
+                    {
+                        assetToTradeProcessedTimeSeriesData!.ToDictionary().TryGetValue(assetToTrackItr.Current.Key, out var assetToTradeDataPoint); 
+                        portfolio.LiquidateIfOwnsStock(settings.AssetToTradeTicker, assetToTradeDataPoint.AdjustedClose);
+                        
+                        var buyPrice = portfolio.GetPriceOfMostRecentStockPurchase();
+                        var amountTraded = portfolio.GetNumberOfSharesFromLastSell();
+                        backTestMetrics.UpdateTradeStatistics(buyPrice, assetToTradeDataPoint.AdjustedClose, amountTraded, portfolio.GetBuyingPower());
+                    }
+                    else if (settings.ShouldHoldAssetBetweenTrades() && portfolio.OwnsStock(settings.AssetToTrackTicker))
+                    {
+                        assetToHoldProcessedTimeSeriesData!.ToDictionary().TryGetValue(assetToTrackItr.Current.Key, out var assetToHoldDataPoint); 
+                        portfolio.LiquidateIfOwnsStock(settings.StaticHoldingTicker, assetToHoldDataPoint.AdjustedClose);
+                        
+                        var buyPrice = portfolio.GetPriceOfMostRecentStockPurchase();
+                        var amountTraded = portfolio.GetNumberOfSharesFromLastSell();
+                        backTestMetrics.UpdateTradeStatistics(buyPrice, assetToHoldDataPoint.AdjustedClose, amountTraded, portfolio.GetBuyingPower());
+                    }
+                }
+            }
+
+            Console.WriteLine(backTestMetrics.ToString());
+            return new BackTestingResponse()
+            {
+                Strategy = Strategies.MACD_CROSS,
+                BacktestSettings = settings,
+                BacktestStatistics = backTestMetrics
+            };
+        }
+
+        private async Task<BackTestingResponse> HandleMovingAverageCrossNew(IBacktestSettings settings)
+        {
             return new BackTestingResponse();
         }
 
+        private async Task<BackTestingResponse> HandleBuyAndHoldNew(IBacktestSettings settings)
+        {
+            return new BackTestingResponse();
+        }
 
         private async Task<BackTestingResponse> HandleMacdBacktest(
                 string bullTkr,
@@ -97,7 +210,7 @@ namespace Backtesting.Services
             var currTkr = "";
             double shares = 0;
             double cash = 1000;
-            Dictionary<(DateTime date, string tkr), (Action action, double amount, double price, double value)> history = new Dictionary<(DateTime date, string tkr), (Action action, double amount, double price, double value)>();
+            Dictionary<(DateTime date, string tkr), (Backtesting.Models.Action action, double amount, double price, double value)> history = new Dictionary<(DateTime date, string tkr), (Backtesting.Models.Action action, double amount, double price, double value)>();
 
             void BuyStock(string tkr, double price, DateTime date)
             {
@@ -106,13 +219,13 @@ namespace Backtesting.Services
                 shares = (cash - 1) / price;
                 cash = cash - (price * shares);
 
-                history.Add((date: date, tkr: tkr), (action: Action.BUY, amount: shares, price: price, value: cash + (price * shares)));
+                history.Add((date: date, tkr: tkr), (action: Models.Action.BUY, amount: shares, price: price, value: cash + (price * shares)));
             }
             void LiquidateStock(double price, DateTime date)
             {
                 if (shares > 0)
                 {
-                    history.Add((date: date, tkr: currTkr), (action: Action.SELL, amount: shares, price: price, value: cash + (price * shares)));
+                    history.Add((date: date, tkr: currTkr), (action: Backtesting.Models.Action.SELL, amount: shares, price: price, value: cash + (price * shares)));
                     currTkr = "";
                     cash = cash + shares * price;
                     shares = 0;
@@ -204,7 +317,7 @@ namespace Backtesting.Services
             var currTkr = "";
             double shares = 0;
             double cash = 1000;
-            Dictionary<(DateTime date, string tkr), (Action action, double amount, double price, double value)> history = new Dictionary<(DateTime date, string tkr), (Action action, double amount, double price, double value)>();
+            Dictionary<(DateTime date, string tkr), (Backtesting.Models.Action action, double amount, double price, double value)> history = new Dictionary<(DateTime date, string tkr), (Backtesting.Models.Action action, double amount, double price, double value)>();
 
             void BuyStock(string tkr, double price, DateTime date)
             {
@@ -213,13 +326,13 @@ namespace Backtesting.Services
                 shares = (cash - 1) / price;
                 cash = cash - (price * shares);
 
-                history.Add((date: date, tkr: tkr), (action: Action.BUY, amount: shares, price: price, value: cash + (price * shares)));
+                history.Add((date: date, tkr: tkr), (action: Backtesting.Models.Action.BUY, amount: shares, price: price, value: cash + (price * shares)));
             }
             void LiquidateStock(double price, DateTime date)
             {
                 if (shares > 0)
                 {
-                    history.Add((date: date, tkr: currTkr), (action: Action.SELL, amount: shares, price: price, value: cash + (price * shares)));
+                    history.Add((date: date, tkr: currTkr), (action: Backtesting.Models.Action.SELL, amount: shares, price: price, value: cash + (price * shares)));
                     currTkr = "";
                     cash = cash + shares * price;
                     shares = 0;
@@ -256,7 +369,7 @@ namespace Backtesting.Services
                 var currentLeadingMovingAverage = leadingMovingAverage.UpdateMovingAverage(itr.Current.Value.AdjustedClose);
                 var currentLaggingMovingAverage = laggingMovingAverage.UpdateMovingAverage(itr.Current.Value.AdjustedClose);
                 updateStats(itr.Current);
-                
+
                 var previousLeadingMovingAverage = leadingMovingAverage.GetPreviousValue();
                 var previousLaggingMovingAverage = laggingMovingAverage.GetPreviousValue();
 
@@ -275,7 +388,7 @@ namespace Backtesting.Services
             {
                 var dateObj = dates.ElementAt(i);
                 var date = dateObj.ToString();
-                var offset  = new DateTimeOffset(dateObj);
+                var offset = new DateTimeOffset(dateObj);
                 var price = prices.ElementAt(i);
                 var adjusted = adjCloses.ElementAt(i);
                 var mvaLeading = movingAveragesLeading.ElementAt(i);
@@ -309,7 +422,7 @@ namespace Backtesting.Services
             var currTkr = "";
             double shares = 0;
             double cash = 1000;
-            Dictionary<(DateTime date, string tkr), (Action action, double amount, double price, double value)> history = new Dictionary<(DateTime date, string tkr), (Action action, double amount, double price, double value)>();
+            Dictionary<(DateTime date, string tkr), (Backtesting.Models.Action action, double amount, double price, double value)> history = new Dictionary<(DateTime date, string tkr), (Backtesting.Models.Action action, double amount, double price, double value)>();
 
             void BuyStock(string tkr, double price, DateTime date)
             {
@@ -318,13 +431,13 @@ namespace Backtesting.Services
                 shares = (cash - 1) / price;
                 cash = cash - (price * shares);
 
-                history.Add((date: date, tkr: tkr), (action: Action.BUY, amount: shares, price: price, value: cash + (price * shares)));
+                history.Add((date: date, tkr: tkr), (action: Backtesting.Models.Action.BUY, amount: shares, price: price, value: cash + (price * shares)));
             }
             void LiquidateStock(double price, DateTime date)
             {
                 if (shares > 0)
                 {
-                    history.Add((date: date, tkr: currTkr), (action: Action.SELL, amount: shares, price: price, value: cash + (price * shares)));
+                    history.Add((date: date, tkr: currTkr), (action: Backtesting.Models.Action.SELL, amount: shares, price: price, value: cash + (price * shares)));
                     currTkr = "";
                     cash = cash + shares * price;
                     shares = 0;
@@ -368,12 +481,6 @@ namespace Backtesting.Services
             return new BackTestingResponse();
         }
 
-    }
-
-    public enum Action
-    {
-        BUY,
-        SELL
     }
 
     public class Macd

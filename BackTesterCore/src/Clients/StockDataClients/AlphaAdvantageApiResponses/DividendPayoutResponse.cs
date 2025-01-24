@@ -9,6 +9,7 @@ namespace Backtesting.Models
     {
         [JsonPropertyName(AlphaAdvantageApiClientConstants.stockSlpitTickerKey)]
         public string Ticker {get; set;}
+        
         [JsonPropertyName(AlphaAdvantageApiClientConstants.stockSlpitDataKey)]
         public List<AlphaAdvantageDividendPayoutData> Data {get; set;}
     }
