@@ -1,11 +1,5 @@
 
 
-
-
-
-using System.Diagnostics.PerformanceData;
-using Microsoft.AspNetCore.Authentication;
-
 namespace Backtesting.Models
 {
 

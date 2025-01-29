@@ -10,26 +10,10 @@ using Microsoft.Extensions.Logging;
 namespace Backtesting.Models
 {
 
-    public class MacdBacktestOptions : IBacktestSettings
+    public class MacdBacktestOptions : IndicatorStrategySettings
     {
 
         private int MAX_EMA_LENGTH = 250;
-        private int SHORTEST_BACKTEST_LENGTH = 200;
-
-        private IStockDataApiClient _apiClient;
-
-        public Strategies Strategy {get; set;}
-        public DateTime StartDate { get; set; }
-
-        public DateTime EndDate { get; set; }
-
-        public string AssetToTradeTicker { get; set; }
-
-        public string AssetToTrackTicker { get; set; }
-
-        public string? StaticHoldingTicker { get; set; }
-
-        public double? StopLossPercentage { get; set; }
 
         public int ShortTermEma { get; set; }
 
@@ -37,16 +21,11 @@ namespace Backtesting.Models
 
         public int MacdSignalLine { get; set; }
 
-        public void SetApiClient(IStockDataApiClient apiClient)
+        public override bool AreValid()
         {
-            _apiClient = apiClient;
-        }
-
-        public bool AreValid()
-        {
-            if (!((IBacktestSettings)this).IsValidTicker(AssetToTradeTicker) ||
-            (((IBacktestSettings)this).ShouldHoldAssetBetweenTrades() && !((IBacktestSettings)this).IsValidTicker(StaticHoldingTicker) )||
-            !((IBacktestSettings)this).IsValidTicker(AssetToTradeTicker))
+            if (!this.IsValidTicker(AssetToTradeTicker) ||
+            (this.ShouldHoldAssetBetweenTrades() && !this.IsValidTicker(StaticHoldingTicker) ) ||
+            !this.IsValidTicker(AssetToTrackTicker))
             {
                 return false;
             }
@@ -64,66 +43,9 @@ namespace Backtesting.Models
             return true;
         }
 
-        public async Task<TimeSeries> GetTrackingAssetTimeSeries()
+        public override ITradingStrategy GetTradingStrategyHandler()
         {
-            return (await _apiClient.GetTimeSeriesDaily(AssetToTrackTicker)).ToTimeSeriesDataModel();
-        }
-
-        public async Task<StockSplit> GetTrackingAssetStockSplits()
-        {
-            return (await _apiClient.GetStockSplits(AssetToTrackTicker)).ToStockSplitDataModel();
-        }
-
-        public async Task<List<AlphaAdvantageDividendPayoutData>> GetTrackingAssetDividendPayouts()
-        {
-            return (await _apiClient.GetDividendPayouts(AssetToTrackTicker)).Data;
-        }
-
-        public async Task<TimeSeries> GetTradingAssetTimeSeries()
-        {
-            return (await _apiClient.GetTimeSeriesDaily(AssetToTradeTicker)).ToTimeSeriesDataModel();
-        }
-
-        public async Task<StockSplit> GetTradingAssetStockSplits()
-        {
-            return (await _apiClient.GetStockSplits(AssetToTradeTicker)).ToStockSplitDataModel();
-        }
-
-        public async Task<List<AlphaAdvantageDividendPayoutData>> GetTradingAssetDividendPayouts()
-        {
-            return (await _apiClient.GetDividendPayouts(AssetToTradeTicker)).Data;
-        }
-
-        public async Task<TimeSeries> GetStaticHoldingAssetTimeSeries()
-        {
-            if (((IBacktestSettings)this).ShouldHoldAssetBetweenTrades())
-            {
-                return (await _apiClient.GetTimeSeriesDaily(StaticHoldingTicker)).ToTimeSeriesDataModel();
-            }
-            else return null;
-        }
-
-        public async Task<StockSplit> GetStaticHoldingAssetStockSplits()
-        {
-            if (((IBacktestSettings)this).ShouldHoldAssetBetweenTrades())
-            {
-                return (await _apiClient.GetStockSplits(StaticHoldingTicker)).ToStockSplitDataModel();
-            }
-            else return null;
-        }
-
-        public async Task<List<AlphaAdvantageDividendPayoutData>> GetStaticHoldingAssetDividendPayouts()
-        {
-            if (((IBacktestSettings)this).ShouldHoldAssetBetweenTrades())
-            {
-                return (await _apiClient.GetDividendPayouts(StaticHoldingTicker)).Data;
-            }
-            else return null;
-        }
-
-        public ITradingStrategy GetTradingStrategyHandler()
-        {
-            return new MacdTradingStrategy(ShortTermEma, LongTermEma, MacdSignalLine);
+            return new MacdTradingStrategy(this);
         }
 
     }

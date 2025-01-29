@@ -30,7 +30,7 @@ namespace BackTesterUnitTests
                 EndDate = DateTime.Parse("01/01/2022"),
                 AssetToTrackTicker = "SPXL",
                 AssetToTradeTicker = "SPXL",
-                StaticHoldingTicker = "SPXS",
+                StaticHoldingTicker = "",
                 StopLossPercentage = null,
                 ShortTermEma = 12,
                 LongTermEma = 26,
@@ -46,27 +46,50 @@ namespace BackTesterUnitTests
             Assert.That(result == null, Is.False);
         }
 
-        //     Update later, currently just there so I dont have to build th azure function each time
-        // [Test]
-        // public async Task BackTest_BuyAndHold()
-        // {
-        //     var result = await _systemUnderTest.BackTest(Strategies.BUY_AND_HOLD,
-        //     null);
+        [Test]
+        public async Task BackTest_MvaCross()
+        {
+            // prepare
+            IBacktestSettings options = new MvaCrossBacktestSettings()
+            {
+                StartDate = DateTime.Parse("01/01/2018"),
+                EndDate = DateTime.Parse("01/01/2022"),
+                AssetToTrackTicker = "SPXL",
+                AssetToTradeTicker = "SPXL",
+                StaticHoldingTicker = "",
+                StopLossPercentage = 7,
+                ShortTermMva = 12,
+                LongTermMva = 26,
+                Strategy = Strategies.MOVING_AVERAGE_CROSS
+            };
+            options.SetApiClient(new SampleDataClient());
 
-        //     Assert.IsFalse(result == null);
-        //     Assert.Pass();
-        // }
+            // run
+            var result = await _systemUnderTest.BackTest(options);
 
-        // [Test]
-        // public async Task BackTest_MvaCross()
-        // {
-        //     var result = await _systemUnderTest.BackTest(Strategies.MOVING_AVERAGE_CROSS,
-        //         null);
+            // assert
+            Assert.That(result == null, Is.False);
+        }
 
-        //     Assert.IsFalse(result == null);
-        //     Assert.Pass();
-        // }
+        [Test]
+        public async Task BackTest_BuyAndHold()
+        {
+            // prepare
+            IBacktestSettings options = new BuyAndHoldSettings()
+            {
+                StartDate = DateTime.Parse("01/01/2018"),
+                EndDate = DateTime.Parse("01/01/2024"),
+                AssetToTradeTicker = "SPXL",
+                Strategy = Strategies.BUY_AND_HOLD
+            };
+            options.SetApiClient(new SampleDataClient());
+
+            // run
+            var result = await _systemUnderTest.BackTest(options);
+
+            // assert
+            Assert.That(result == null, Is.False);
+        }
     }
-
 }
 
