@@ -20,11 +20,39 @@ namespace Backtesting.Services
 
         private DateTime FinalTradingDay;
 
+        private List<PortfolioValue> PortfolioValues;
+
         public BuyAndHoldTradingStrategy(BuyAndHoldSettings options)
         {
             StrategyPortfolio = new Portfolio();
             Options = options;
         }
+
+        public List<PortfolioValue> GetPortfolioValues()
+        {
+            return PortfolioValues.OrderBy(e => e.Date).ToList();
+        }
+
+        public void UpdatePortfolioValues(bool isTradingOver = false)
+        {
+            var dateTime = isTradingOver ? FinalTradingDay : TradingDaysIterator.Current;
+            var currentPortfolioValue = new PortfolioValue()
+            {
+                Date = TradingDaysIterator.Current.UnixTimestampFromDateTime()
+            };
+
+            if (StrategyPortfolio.OwnsAnyStock())
+            {
+                AssetToTradeProcessedTimeSeriesData!.ToDictionary().TryGetValue(dateTime,
+                            out var assetToTradeDataPoint);
+                var ownedStock = StrategyPortfolio.GetAmountOfStockOwned(Options.AssetToTradeTicker);
+                currentPortfolioValue.Value = assetToTradeDataPoint.AdjustedClose * ownedStock;
+            }
+
+            currentPortfolioValue.Value = StrategyPortfolio.GetBuyingPower();
+            PortfolioValues.Add(currentPortfolioValue);
+        }
+
 
         public bool MoveNext()
         {
@@ -39,11 +67,13 @@ namespace Backtesting.Services
                 var amountTraded = StrategyPortfolio.GetNumberOfSharesFromLastSell();
                 BacktestMetrics.UpdateTradeStatistics(buyPrice, assetToTradeDataPoint.AdjustedClose, amountTraded, StrategyPortfolio.GetBuyingPower());
 
+                UpdatePortfolioValues(true);
+
                 return false;
             }
 
             // buy stock on first day
-            if(!StrategyPortfolio.OwnsAnyStock())
+            if (!StrategyPortfolio.OwnsAnyStock())
             {
                 AssetToTradeProcessedTimeSeriesData!.ToDictionary().TryGetValue(TradingDaysIterator.Current,
                     out var assetToTradeDataPoint);
@@ -51,6 +81,7 @@ namespace Backtesting.Services
             }
 
             BacktestMetrics.UpdatePercentTimeInvested(true);
+            UpdatePortfolioValues();
 
             return true;
         }
@@ -65,7 +96,7 @@ namespace Backtesting.Services
             TimeSeries assetToTradeTimeSeriesData = await Options.GetTradingAssetTimeSeries();
             StockSplit assetToTradeStockSplitData = await Options.GetTradingAssetStockSplits();
             List<AlphaAdvantageDividendPayoutData> assetToTradeDividendPayoutData = await Options.GetTradingAssetDividendPayouts();
-            
+
             assetToTradeTimeSeriesData.CalculateAdjustedClose(assetToTradeStockSplitData);
             AssetToTradeProcessedTimeSeriesData = assetToTradeTimeSeriesData.Data.Where(x => x.Key >= Options.StartDate && x.Key <= Options.EndDate).OrderBy(x => x.Key);
 

@@ -1,5 +1,6 @@
 
 
+using System.ComponentModel.Design;
 using Backtesting.Models;
 
 namespace Backtesting.Services
@@ -23,6 +24,47 @@ namespace Backtesting.Services
 
         protected DateTime FinalTradingDay;
 
+        private List<PortfolioValue> PortfolioValues;
+        
+        public List<PortfolioValue> GetPortfolioValues()
+        {
+            return PortfolioValues.OrderBy(e => e.Date).ToList();
+        }
+
+        public void UpdatePortfolioValues(bool isTradingOver = false)
+        {
+            var dateTime = isTradingOver ? FinalTradingDay : TradingDaysIterator.Current;
+
+            var currentPortfolioValue = new PortfolioValue()
+            {
+                Date = TradingDaysIterator.Current.UnixTimestampFromDateTime()
+            };
+
+            var heldStocks = StrategyPortfolio.GetStocksCurrentlyHeld();
+            if (heldStocks.Count > 0)
+            {
+                foreach (var tkr in heldStocks)
+                {
+                    if (tkr == Options.AssetToTradeTicker)
+                    {
+                        AssetToTradeProcessedTimeSeriesData!.ToDictionary().TryGetValue(dateTime,
+                            out var assetToTradeDataPoint);
+                        var ownedStock = StrategyPortfolio.GetAmountOfStockOwned(Options.AssetToTradeTicker);
+                        currentPortfolioValue.Value = assetToTradeDataPoint.AdjustedClose * ownedStock;
+                    }
+                    else if (Options.ShouldHoldAssetBetweenTrades() && tkr == Options.StaticHoldingTicker)
+                    {
+                        AssetToHoldProcessedTimeSeriesData!.ToDictionary().TryGetValue(dateTime,
+                            out var assetToHoldDataPoint);
+                        var ownedStock = StrategyPortfolio.GetAmountOfStockOwned(Options.AssetToTradeTicker);
+                        currentPortfolioValue.Value = assetToHoldDataPoint.AdjustedClose * ownedStock;
+                    }
+                }
+            }
+
+            currentPortfolioValue.Value = StrategyPortfolio.GetBuyingPower();
+            PortfolioValues.Add(currentPortfolioValue);
+        }
 
         public bool MoveNext()
         {
@@ -32,6 +74,7 @@ namespace Backtesting.Services
                 return false;
             }
 
+            UpdatePortfolioValues();
             UpdateIndicators();
 
             if (IsBuyConditionMet())
@@ -123,6 +166,8 @@ namespace Backtesting.Services
                 var amountTraded = StrategyPortfolio.GetNumberOfSharesFromLastSell();
                 BacktestMetrics.UpdateTradeStatistics(buyPrice, assetToHoldDataPoint.AdjustedClose, amountTraded, StrategyPortfolio.GetBuyingPower());
             }
+
+            UpdatePortfolioValues(true);
         }
 
         public async Task RetreiveData()

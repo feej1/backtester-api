@@ -14,6 +14,8 @@ namespace Backtesting.Services
         public BacktestMetrics GetStatistics();
 
         public Task RetreiveData();
+
+        public List<PortfolioValue> GetPortfolioValues();
     } 
 
 }

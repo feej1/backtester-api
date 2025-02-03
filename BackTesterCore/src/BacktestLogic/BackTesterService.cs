@@ -15,18 +15,24 @@ namespace Backtesting.Services
 
     public class BacktestingService : IBackTestingService
     {
-        private readonly IStockDataApiClient _apiClient;
         private readonly ILogger _logger;
 
-        public BacktestingService(ILoggerFactory loggerFactory, IStockDataApiClient apiClient)
+        public BacktestingService(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<BacktestingService>();
-            _apiClient = apiClient;
         }
 
         public async Task<BackTestingResponse> BackTest(IBacktestSettings settings)
         {
-            return await HandleBacktest(settings);
+            try 
+            {
+                return await HandleBacktest(settings);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+                return null;
         }
 
         private async Task<BackTestingResponse> HandleBacktest(IBacktestSettings settings)
@@ -45,6 +51,8 @@ namespace Backtesting.Services
             {
                 // nothing currently 
             }
+
+            tradingStrategyHandler.GetPortfolioValues();
 
             Console.WriteLine(tradingStrategyHandler.GetStatistics().ToString());
             return new BackTestingResponse()

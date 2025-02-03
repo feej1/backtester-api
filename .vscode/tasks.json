@@ -62,7 +62,7 @@
 				"cwd": "${workspaceFolder}/BackTestApi/bin/Debug/net8.0"
 			},
 			"command": "host start",
-			"isBackground": true,
+			"isBackground": false,
 			"problemMatcher": "$func-dotnet-watch"
 		}
 	]

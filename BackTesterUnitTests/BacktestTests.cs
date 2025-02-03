@@ -16,7 +16,7 @@ namespace BackTesterUnitTests
         [SetUp]
         public void Setup()
         {
-            _systemUnderTest = new BacktestingService(new LoggerFactory(), new SampleDataClient());
+            _systemUnderTest = new BacktestingService(new LoggerFactory());
         }
 
         // Update later, currently just there so I dont have to build th azure function each time

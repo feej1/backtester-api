@@ -19,15 +19,28 @@ var host = new HostBuilder()
             options.AllowSynchronousIO = true;
         });
 
-        var alphaAdvantageClientSettings = new AlphaAdvantageApiClientSettings();
-        alphaAdvantageClientSettings.ApiBaseUrl = context.Configuration["AlphaAdvantageApiClientSettingsApiBaseUrl"];
-        alphaAdvantageClientSettings.ApiKey = context.Configuration["AlphaAdvantageApiClientSettingsApiKey"];
-        services.AddSingleton(alphaAdvantageClientSettings);
+        // CHANGED IMPLIMENTATION ALTHOUGH KEEPING FOR NOTES
 
-        services.AddHttpClient(AlphaAdvantageApiClientConstants.httpClientName, (serviceProvider, httpClient) => {
-            httpClient.BaseAddress = new Uri(alphaAdvantageClientSettings.ApiBaseUrl!);
-        });
-        services.AddScoped<IStockDataApiClient, SampleDataClient>();
+        // var alphaAdvantageClientSettings = new AlphaAdvantageApiClientSettings();
+
+        // values are null if not found in app settings
+        // alphaAdvantageClientSettings.ApiBaseUrl = context.Configuration["AlphaAdvantageApiClientSettingsApiBaseUrl"];
+        // alphaAdvantageClientSettings.ApiKey = context.Configuration["AlphaAdvantageApiClientSettingsApiKey"];
+        // services.AddSingleton(alphaAdvantageClientSettings);
+
+        // services.AddHttpClient(AlphaAdvantageApiClientConstants.httpClientName, (serviceProvider, httpClient) => {
+        //     httpClient.BaseAddress = new Uri(alphaAdvantageClientSettings.ApiBaseUrl!);
+        // });
+
+        // if (context.HostingEnvironment.EnvironmentName == "Development")
+        // {
+        //     services.AddScoped<IStockDataApiClient, SampleDataClient>();
+        // }
+        // else 
+        // {
+        //     services.AddScoped<IStockDataApiClient, AlphaAdvantageClient>();
+        // }
+
         services.AddScoped<IBackTestingService, BacktestingService>();
     })
     .Build();

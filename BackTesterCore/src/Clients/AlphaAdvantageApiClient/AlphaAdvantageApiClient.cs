@@ -1,3 +1,4 @@
+using System.Security.Policy;
 using System.Text.Json;
 using Backtesting.Models;
 
@@ -10,19 +11,22 @@ namespace Backtesting.Clients
         private readonly AlphaAdvantageApiClientSettings _settings;
         private readonly HttpClient _httpClient;
 
-        public AlphaAdvantageClient(
-            AlphaAdvantageApiClientSettings settings,
-            IHttpClientFactory httpClientFactory
-        )
+        public AlphaAdvantageClient(AlphaAdvantageApiClientSettings settings)
         {
+            if (settings.ApiBaseUrl == null || settings.ApiKey == null)
+                throw new Exception("Settings cant have null values");
+
             _settings = settings;
-            _httpClient = httpClientFactory.CreateClient(AlphaAdvantageApiClientConstants.httpClientName);
+            _httpClient = new HttpClient()
+            {
+                BaseAddress = new Uri(_settings.ApiBaseUrl)
+            };
         }
 
         public async Task<AlphaAdvantageTimeSeriesDailyResponse> GetTimeSeriesDaily(string tkr)
         {
 
-            // https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IBM&apikey=V6V3OG1MINVI8JE9
+            // https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IBM&outputsize=full&apikey=V6V3OG1MINVI8JE9
             var request = QueryStringBuilder
                 .Initalize(AlphaAdvantageRequestTypes.TIME_SERIES_DAILY)
                 .AddSymbol(tkr)
@@ -38,11 +42,6 @@ namespace Backtesting.Clients
             var timeseries = JsonSerializer.Deserialize<AlphaAdvantageTimeSeriesDailyResponse>(response.Content.ReadAsStream());
             return timeseries;
 
-            // var data = JsonObject.Parse(response.Content.ReadAsStream());
-            // JsonNode metaData = data[AlphaAdvantageApiClientConstants.timeSeriesMetaDataJsonKey];
-            // result.MetaData = JsonSerializer.Deserialize<AlphaAdvantageTimeSeriesMetaData>(metaData.ToJsonString());
-            // JsonNode data1 = data[AlphaAdvantageApiClientConstants.timeSeriesDataJsonKey];
-            // var timeseiresEle = JsonSerializer.Deserialize<Dictionary<string, AlphaAdvantageTimeSeriesElement>>(data1.ToString());
         }
 
         public async Task<AlphaAdvantageStockSplitResponse> GetStockSplits(string tkr)
@@ -91,7 +90,14 @@ namespace Backtesting.Clients
     {
         public static string Initalize(AlphaAdvantageRequestTypes type)
         {
-            return "query?" + "function=" + Enum.GetName(type.GetType(), type);
+            var url = "query?" + "function=" + Enum.GetName(type.GetType(), type);
+            
+            if (type == AlphaAdvantageRequestTypes.TIME_SERIES_DAILY)
+            {
+                url += "&outputsize=full";
+            }
+
+            return url;
         }
 
         public static string AddSymbol(this string currUriQuery, string tkr)
@@ -101,6 +107,8 @@ namespace Backtesting.Clients
 
         public static string AddApiKey(this string currUriQuery, string apiKey)
         {
+            if (String.IsNullOrWhiteSpace(apiKey))
+                throw new Exception("Invalid Api Key");
             return currUriQuery + "&" + "apikey=" + apiKey;
         }
     }

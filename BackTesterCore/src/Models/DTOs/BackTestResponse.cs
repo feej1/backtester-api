@@ -18,9 +18,16 @@ namespace Backtesting.Models
         public IBacktestSettings BacktestSettings {get; set;}
 
         public BacktestMetrics BacktestStatistics {get; set;}
+
+        public List<PortfolioValue> PortfolioValues {get; set;}
     }
 
-    
+
+    public class PortfolioValue
+    {
+        public long Date {get; set;}
+        public double Value {get; set;}
+    }    
 
     public class BacktestMetrics 
     {

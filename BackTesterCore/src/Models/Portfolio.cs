@@ -20,6 +20,20 @@ namespace Backtesting.Models
             BuyingPower = startingCash;
         }
 
+        public List<string> GetStocksCurrentlyHeld()
+        {
+            return Holdings.Select(e => e.Key).ToList();
+        }        
+
+        public ISet<String> GetListOfTradedStocks()
+        {
+            return TradeHistory.Select(ele => ele.Key.Ticker).ToHashSet();
+        }
+
+        public Dictionary<TradeHistoryKey, TradeHistoryData> GetTradingHistory()
+        {
+            return TradeHistory.OrderBy(ele => ele.Key.DateTime).ToDictionary();
+        }
 
         public bool OwnsAnyStock()
         {
