@@ -77,7 +77,8 @@ jobs:
         uses: azure/arm-deploy@v1
         id: armtemplate
         with:
-          scope: ${{ secrets.AZURE_SUBSCRIPTION }}
+          scope: subscription
+          region: centralus
           template: './CICD/deploy.bicep' 
           parameters: environmentName=${{ env.ENV_NAME }} 
           deployment-mode: 'Incremental' 
