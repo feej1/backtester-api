@@ -83,7 +83,6 @@ jobs:
           parameters: environmentName=${{ env.ENV_NAME }} 
           deployment-mode: 'Incremental' 
   
-
       # Deploy to Azure Function App
       - name: Deploy to Azure Function App
         uses: azure/functions-action@v2
