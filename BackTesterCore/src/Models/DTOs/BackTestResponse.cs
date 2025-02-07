@@ -1,11 +1,6 @@
 
-
-
-using System.Data;
-using System.Numerics;
 using System.Text.Json.Serialization;
 using Backtesting.Services;
-using Microsoft.ApplicationInsights;
 
 namespace Backtesting.Models
 {
