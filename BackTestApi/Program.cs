@@ -1,9 +1,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Backtesting.Clients;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Configuration;
 using Backtesting.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
