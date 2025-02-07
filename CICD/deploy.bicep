@@ -10,7 +10,7 @@ param resourceGroupLocation string = 'centralus'
 param environmentName string
 
 
-var appName = 'BacktestApi'
+param appName string = 'backtest-api'
 
 resource newRG 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: '${appName}-${environmentName}'
@@ -25,3 +25,5 @@ module functionApp 'azure-function.bicep' = {
     appName: appName
   }
 }
+
+output deployedAppName string = functionApp.outputs.functionAppName

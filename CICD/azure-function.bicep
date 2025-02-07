@@ -1,7 +1,7 @@
 
 
 @description('The name of the function app that you wish to create.')
-param appName string = 'BacktestApi'
+param appName string = 'backtest-api'
 
 
 param deploymentEnvironment string
@@ -102,3 +102,5 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
     Request_Source: 'rest'
   }
 }
+
+output functionAppName string = functionApp.name
