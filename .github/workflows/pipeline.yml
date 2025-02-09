@@ -42,14 +42,14 @@ jobs:
 
       # Publish the application (produces the artifacts in a folder)
       - name: Publish the application
-        run: dotnet publish --configuration Release --output ./publish
+        run: dotnet publish ./BackTestApi/Backtester.csproj --configuration Release --output ./publish
 
       - name: Upload Build Artifacts
         if: ${{ github.event_name == 'push' }}
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-build-artifacts
-          path: ./build  # Path to the folder where the build artifacts are located
+          path: ./publish  # Path to the folder where the build artifacts are located
 
 
   deploy:
