@@ -62,15 +62,14 @@ jobs:
 
       - name: Set Prod for env name if on branch main
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: echo "Setting environment name ${{github.ref}} "
-        env:
-          ENV_NAME: "prod"
+        run: |
+              echo "ENV_NAME=prod" >> "$GITHUB_ENV"
 
       - name: Set Dev for env name if on branch dev
         if: ${{ github.ref == 'refs/heads/dev' }}
-        run: echo "Setting environment name ${{github.ref}}"
-        env:
-          ENV_NAME: "dev"
+        run: |
+              echo "ENV_NAME=dev" >> "$GITHUB_ENV"
+        
 
       - name: Deploy ARM Template
         uses: azure/arm-deploy@v1
@@ -80,7 +79,7 @@ jobs:
           region: centralus
           template: './CICD/deploy.bicep' 
           parameters: environmentName=${{ env.ENV_NAME }} 
-          deployment-mode: 'Incremental' 
+          deploymentMode: 'Incremental' 
   
       # Deploy to Azure Function App
       - name: Deploy to Azure Function App

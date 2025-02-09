@@ -54,14 +54,13 @@ namespace Backtesting.Services
                 // nothing currently 
             }
 
-            var portfolioValue = tradingStrategyHandler.GetPortfolioValues();
-
             Console.WriteLine(tradingStrategyHandler.GetStatistics().ToString());
             return new BackTestingResponse()
             {
                 Strategy = Strategies.MACD_CROSS,
                 BacktestSettings = settings,
-                BacktestStatistics = tradingStrategyHandler.GetStatistics()
+                BacktestStatistics = tradingStrategyHandler.GetStatistics(),
+                PortfolioValues = tradingStrategyHandler.GetPortfolioValues()
             };
         }
     }
