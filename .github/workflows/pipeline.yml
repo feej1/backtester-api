@@ -7,11 +7,11 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - main
-      - development
+      - dev
   push:
     branches: 
       - main
-      - development
+      - dev
 
 jobs:
   build:
@@ -44,7 +44,7 @@ jobs:
         run: dotnet publish --configuration Release --output ./publish
 
   deploy:
-    if: github.event.pull_request.merged == true
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     needs: build
     environment: production
@@ -66,8 +66,8 @@ jobs:
         env:
           ENV_NAME: "prod"
 
-      - name: Set Dev for env name if on branch development
-        if: ${{ github.ref == 'refs/heads/development' }}
+      - name: Set Dev for env name if on branch dev
+        if: ${{ github.ref == 'refs/heads/dev' }}
         run: echo "Setting environment name ${{github.ref}}"
         env:
           ENV_NAME: "dev"
