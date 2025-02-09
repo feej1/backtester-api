@@ -45,7 +45,7 @@ jobs:
 
       - name: Upload Build Artifacts
         if: ${{ github.event_name == 'push' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dotnet-build-artifacts
           path: ./publish  # Path to the folder where the build artifacts are located
