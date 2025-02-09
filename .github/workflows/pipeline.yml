@@ -4,15 +4,18 @@ name: Build and Deploy Azure Function
 
 on:
   pull_request:
-    types: [opened, edited, closed]
+    types: [opened, synchronize, reopened]
     branches:
+      - main
+      - development
+  push:
+    branches: 
       - main
       - development
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       # Checkout the repository
       - name: Checkout code
@@ -35,10 +38,6 @@ jobs:
       - name: Run unit tests
         run: |
             dotnet test --configuration Release  # Run the unit tests
-
-      - name: Run unit tests
-        run: |
-          dotnet test --configuration Release  # Run the unit tests
 
       # Publish the application (produces the artifacts in a folder)
       - name: Publish the application
@@ -83,7 +82,6 @@ jobs:
           parameters: environmentName=${{ env.ENV_NAME }} 
           deployment-mode: 'Incremental' 
   
-
       # Deploy to Azure Function App
       - name: Deploy to Azure Function App
         uses: azure/functions-action@v2
