@@ -33,7 +33,8 @@ jobs:
 
       # Build the application
       - name: Build the application
-        run: dotnet build --configuration Release
+        run: |
+              dotnet build --configuration Release --output ./build
 
       - name: Run unit tests
         run: |
@@ -48,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-build-artifacts
-          path: ./publish  # Path to the folder where the build artifacts are located
+          path: ./build  # Path to the folder where the build artifacts are located
 
 
   deploy:
