@@ -1,6 +1,6 @@
 
 
-name: Build and Deploy Azure Function
+name: Build and Deploy
 
 on:
   pull_request:
@@ -43,6 +43,14 @@ jobs:
       - name: Publish the application
         run: dotnet publish --configuration Release --output ./publish
 
+      - name: Upload Build Artifacts
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: dotnet-build-artifacts
+          path: ./publish  # Path to the folder where the build artifacts are located
+
+
   deploy:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
@@ -53,6 +61,12 @@ jobs:
       # Checkout code again (needed in the deploy job)
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dotnet-build-artifacts  # This should match the artifact name in the build job
+          path: dotnet-build-artifacts  # This should match the artifact name in the build job
 
       # Azure login action to authenticate with Azure
       - name: Azure Login
@@ -85,6 +99,6 @@ jobs:
         uses: azure/functions-action@v1
         with:
           app-name: ${{ steps.armtemplate.outputs.deployedAppName }}  
-          package: ./publish   
+          package: ./dotnet-build-artifacts   
 
 
