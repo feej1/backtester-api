@@ -79,7 +79,6 @@ jobs:
           region: centralus
           template: './CICD/deploy.bicep' 
           parameters: environmentName=${{ env.ENV_NAME }} 
-          deploymentMode: 'Incremental' 
   
       # Deploy to Azure Function App
       - name: Deploy to Azure Function App
