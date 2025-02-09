@@ -31,8 +31,10 @@ namespace Backtesting.Services
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-            }
+                Console.WriteLine(ex.StackTrace);
                 return null;
+            }
+                
         }
 
         private async Task<BackTestingResponse> HandleBacktest(IBacktestSettings settings)
@@ -52,7 +54,7 @@ namespace Backtesting.Services
                 // nothing currently 
             }
 
-            tradingStrategyHandler.GetPortfolioValues();
+            var portfolioValue = tradingStrategyHandler.GetPortfolioValues();
 
             Console.WriteLine(tradingStrategyHandler.GetStatistics().ToString());
             return new BackTestingResponse()

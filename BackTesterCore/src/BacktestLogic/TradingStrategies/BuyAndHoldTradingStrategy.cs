@@ -25,6 +25,7 @@ namespace Backtesting.Services
         public BuyAndHoldTradingStrategy(BuyAndHoldSettings options)
         {
             StrategyPortfolio = new Portfolio();
+            PortfolioValues = new List<PortfolioValue>();
             Options = options;
         }
 
