@@ -17,7 +17,7 @@ param storageAccountType string = 'Standard_LRS'
 var location = resourceGroup().location
 var resourceName = '${appName}-${deploymentEnvironment}'
 var storageAccountName = '${replace(toLower(appName),'-' ,'')}${substring(uniqueString(resourceGroup().id), 0, 4)}'
-var functionWorkerRuntime = 'dotnet'
+var functionWorkerRuntime = 'dotnet-isolated'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: storageAccountName
