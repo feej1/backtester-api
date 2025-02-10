@@ -37,7 +37,7 @@ namespace Backtesting.Services
 
             var currentPortfolioValue = new PortfolioValue()
             {
-                Date = TradingDaysIterator.Current.UnixTimestampFromDateTime()
+                Date = dateTime.UnixTimestampFromDateTime()
             };
 
             var heldStocks = StrategyPortfolio.GetStocksCurrentlyHeld();
