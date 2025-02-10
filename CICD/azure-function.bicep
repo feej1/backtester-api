@@ -70,10 +70,6 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
           value: '~4'
         }
         {
-          name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '~14'
-        }
-        {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
           value: applicationInsights.properties.InstrumentationKey
         }
