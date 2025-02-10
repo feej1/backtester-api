@@ -16,6 +16,7 @@ namespace Backtesting.Services
         {
             Options = options;
             StrategyPortfolio = new Portfolio();
+            PortfolioValues = new List<PortfolioValue>();
             ShortTermMva = new SimpleMovingAverage(options.ShortTermMva);
             LongTermMva = new SimpleMovingAverage(options.LongTermMva);
         }

@@ -31,8 +31,10 @@ namespace Backtesting.Services
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-            }
+                Console.WriteLine(ex.StackTrace);
                 return null;
+            }
+                
         }
 
         private async Task<BackTestingResponse> HandleBacktest(IBacktestSettings settings)
@@ -52,14 +54,13 @@ namespace Backtesting.Services
                 // nothing currently 
             }
 
-            tradingStrategyHandler.GetPortfolioValues();
-
             Console.WriteLine(tradingStrategyHandler.GetStatistics().ToString());
             return new BackTestingResponse()
             {
                 Strategy = Strategies.MACD_CROSS,
                 BacktestSettings = settings,
-                BacktestStatistics = tradingStrategyHandler.GetStatistics()
+                BacktestStatistics = tradingStrategyHandler.GetStatistics(),
+                PortfolioValues = tradingStrategyHandler.GetPortfolioValues()
             };
         }
     }

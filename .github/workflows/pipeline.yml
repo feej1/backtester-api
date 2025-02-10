@@ -1,18 +1,21 @@
 
 
-name: Build and Deploy Azure Function
+name: Build and Deploy
 
 on:
   pull_request:
-    types: [opened, edited, closed]
+    types: [opened, synchronize, reopened]
     branches:
       - main
-      - development
+      - dev
+  push:
+    branches: 
+      - main
+      - dev
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       # Checkout the repository
       - name: Checkout code
@@ -30,22 +33,28 @@ jobs:
 
       # Build the application
       - name: Build the application
-        run: dotnet build --configuration Release
+        run: |
+              dotnet build --configuration Release --output ./build
 
       - name: Run unit tests
         run: |
             dotnet test --configuration Release  # Run the unit tests
 
-      - name: Run unit tests
-        run: |
-          dotnet test --configuration Release  # Run the unit tests
-
       # Publish the application (produces the artifacts in a folder)
       - name: Publish the application
-        run: dotnet publish --configuration Release --output ./publish
+        run: dotnet publish ./BackTestApi/Backtester.csproj --configuration Release --output ./publish
+
+      - name: Upload Build Artifacts
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-build-artifacts
+          include-hidden-files: true
+          path: ./publish  # Path to the folder where the build artifacts are located
+
 
   deploy:
-    if: github.event.pull_request.merged == true
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     needs: build
     environment: production
@@ -55,6 +64,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-build-artifacts  # This should match the artifact name in the build job
+          path: dotnet-build-artifacts  # This should match the artifact name in the build job
+
       # Azure login action to authenticate with Azure
       - name: Azure Login
         uses: azure/login@v2
@@ -63,15 +78,14 @@ jobs:
 
       - name: Set Prod for env name if on branch main
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: echo "Setting environment name ${{github.ref}} "
-        env:
-          ENV_NAME: "prod"
+        run: |
+              echo "ENV_NAME=prod" >> "$GITHUB_ENV"
 
-      - name: Set Dev for env name if on branch development
-        if: ${{ github.ref == 'refs/heads/development' }}
-        run: echo "Setting environment name ${{github.ref}}"
-        env:
-          ENV_NAME: "dev"
+      - name: Set Dev for env name if on branch dev
+        if: ${{ github.ref == 'refs/heads/dev' }}
+        run: |
+              echo "ENV_NAME=dev" >> "$GITHUB_ENV"
+        
 
       - name: Deploy ARM Template
         uses: azure/arm-deploy@v1
@@ -81,14 +95,12 @@ jobs:
           region: centralus
           template: './CICD/deploy.bicep' 
           parameters: environmentName=${{ env.ENV_NAME }} 
-          deployment-mode: 'Incremental' 
-  
-
+      
       # Deploy to Azure Function App
       - name: Deploy to Azure Function App
-        uses: azure/functions-action@v2
+        uses: azure/functions-action@v1
         with:
           app-name: ${{ steps.armtemplate.outputs.deployedAppName }}  
-          package: ./publish   
+          package: ./dotnet-build-artifacts   
 
 

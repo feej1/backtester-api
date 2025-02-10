@@ -15,6 +15,7 @@ namespace Backtesting.Services
         {
             Options = macdOptions;
             StrategyPortfolio = new Portfolio();
+            PortfolioValues = new List<PortfolioValue>();
             MacdIndicator = new Macd(macdOptions.ShortTermEma, macdOptions.LongTermEma, macdOptions.MacdSignalLine);
         }
         protected override bool IsSellConditionMet()

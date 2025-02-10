@@ -24,7 +24,7 @@ namespace Backtesting.Services
 
         protected DateTime FinalTradingDay;
 
-        private List<PortfolioValue> PortfolioValues;
+        protected List<PortfolioValue> PortfolioValues;
         
         public List<PortfolioValue> GetPortfolioValues()
         {
@@ -37,7 +37,7 @@ namespace Backtesting.Services
 
             var currentPortfolioValue = new PortfolioValue()
             {
-                Date = TradingDaysIterator.Current.UnixTimestampFromDateTime()
+                Date = dateTime.UnixTimestampFromDateTime()
             };
 
             var heldStocks = StrategyPortfolio.GetStocksCurrentlyHeld();
@@ -61,8 +61,11 @@ namespace Backtesting.Services
                     }
                 }
             }
+            else
+            {
+                currentPortfolioValue.Value = StrategyPortfolio.GetBuyingPower();
+            }
 
-            currentPortfolioValue.Value = StrategyPortfolio.GetBuyingPower();
             PortfolioValues.Add(currentPortfolioValue);
         }
 
