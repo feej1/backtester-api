@@ -49,6 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-build-artifacts
+          include-hidden-files: true
           path: ./publish  # Path to the folder where the build artifacts are located
 
 
@@ -104,7 +105,6 @@ jobs:
         uses: azure/functions-action@v1
         with:
           app-name: ${{ steps.armtemplate.outputs.deployedAppName }}  
-          include-hidden-files: true
           package: ./dotnet-build-artifacts   
 
 
