@@ -29,21 +29,25 @@ namespace Backtesting.Models
 
         public async Task<TimeSeries> GetTrackingAssetTimeSeries()
         {
+            CheckApiClient();
             return (await _apiClient.GetTimeSeriesDaily(AssetToTrackTicker)).ToTimeSeriesDataModel();
         }
 
         public async Task<StockSplit> GetTrackingAssetStockSplits()
         {
+            CheckApiClient();
             return (await _apiClient.GetStockSplits(AssetToTrackTicker)).ToStockSplitDataModel();
         }
 
         public async Task<List<AlphaAdvantageDividendPayoutData>> GetTrackingAssetDividendPayouts()
         {
+            CheckApiClient();
             return (await _apiClient.GetDividendPayouts(AssetToTrackTicker)).Data;
         }
 
         public async Task<TimeSeries> GetStaticHoldingAssetTimeSeries()
         {
+            CheckApiClient();
             if (this.ShouldHoldAssetBetweenTrades())
             {
                 return (await _apiClient.GetTimeSeriesDaily(StaticHoldingTicker)).ToTimeSeriesDataModel();
@@ -53,6 +57,7 @@ namespace Backtesting.Models
 
         public async Task<StockSplit> GetStaticHoldingAssetStockSplits()
         {
+            CheckApiClient();
             if (this.ShouldHoldAssetBetweenTrades())
             {
                 return (await _apiClient.GetStockSplits(StaticHoldingTicker)).ToStockSplitDataModel();
@@ -62,6 +67,7 @@ namespace Backtesting.Models
 
         public async Task<List<AlphaAdvantageDividendPayoutData>> GetStaticHoldingAssetDividendPayouts()
         {
+            CheckApiClient();
             if (this.ShouldHoldAssetBetweenTrades())
             {
                 return (await _apiClient.GetDividendPayouts(StaticHoldingTicker)).Data;

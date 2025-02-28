@@ -21,6 +21,7 @@ namespace Backtesting.Clients
             {
                 BaseAddress = new Uri(_settings.ApiBaseUrl)
             };
+            _httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", AlphaAdvantageRateLimitBypasser.GetRandomIpAddress());
         }
 
         public async Task<AlphaAdvantageTimeSeriesDailyResponse> GetTimeSeriesDaily(string tkr)

@@ -10,7 +10,7 @@ namespace Backtesting.Services
     public interface IBackTestingService
     {
 
-        public Task<BackTestingResponse> BackTest(IBacktestSettings settings);
+        public Task<BacktestResult> BackTest(IBacktestSettings settings);
     }
 
     public class BacktestingService : IBackTestingService
@@ -22,7 +22,7 @@ namespace Backtesting.Services
             _logger = loggerFactory.CreateLogger<BacktestingService>();
         }
 
-        public async Task<BackTestingResponse> BackTest(IBacktestSettings settings)
+        public async Task<BacktestResult> BackTest(IBacktestSettings settings)
         {
             try 
             {
@@ -32,18 +32,26 @@ namespace Backtesting.Services
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-                return null;
+                var result =  new BacktestResult() {
+                    ResultData = "Some error occurred processing the backtest",
+                    ResponseType = RESPONSE_TYPES.INTERNAL_ERROR
+                };
+                return result;
             }
                 
         }
 
-        private async Task<BackTestingResponse> HandleBacktest(IBacktestSettings settings)
+        private async Task<BacktestResult> HandleBacktest(IBacktestSettings settings)
         {
 
             if (!settings.AreValid())
             {
                 _logger.LogError($"BacktesterService.HandleBacktest(): Invalid Backtest Settings: {settings}");
-                return null;
+                var result =  new BacktestResult() {
+                    ResultData = "Invalid Settings",
+                    ResponseType = RESPONSE_TYPES.INVALID_SETTINGS
+                };
+                return result;
             }
 
             var tradingStrategyHandler = settings.GetTradingStrategyHandler();
@@ -55,12 +63,17 @@ namespace Backtesting.Services
             }
 
             Console.WriteLine(tradingStrategyHandler.GetStatistics().ToString());
-            return new BackTestingResponse()
+            var data = new BackTestingResponse()
             {
                 Strategy = Strategies.MACD_CROSS,
                 BacktestSettings = settings,
                 BacktestStatistics = tradingStrategyHandler.GetStatistics(),
                 PortfolioValues = tradingStrategyHandler.GetPortfolioValues()
+            };
+            return new BacktestResult() 
+            {
+                ResultData = data,
+                ResponseType = RESPONSE_TYPES.SUCCESS
             };
         }
     }

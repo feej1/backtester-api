@@ -29,7 +29,6 @@ namespace BackTest.Function
         {
             // get settings from body and create 
             var options = JsonSerializer.Deserialize<MacdBacktestOptions>(req.Body);
-            options.SetApiClient(new SampleDataClient());
 
             // run backtest
             var result = await _backTestingService.BackTest(options);
@@ -54,7 +53,6 @@ namespace BackTest.Function
                 MacdSignalLine = 9,
                 Strategy = Strategies.MACD_CROSS
             };
-            options.SetApiClient(new SampleDataClient());
 
             // run backtest
             var result = await _backTestingService.BackTest(options);

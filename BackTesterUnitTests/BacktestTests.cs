@@ -43,7 +43,7 @@ namespace BackTesterUnitTests
             var result = await _systemUnderTest.BackTest(options);
 
             // assert
-            Assert.That(result == null, Is.False);
+            Assert.That(result.ResponseType == RESPONSE_TYPES.SUCCESS, Is.True);
         }
 
         [Test]
@@ -68,7 +68,7 @@ namespace BackTesterUnitTests
             var result = await _systemUnderTest.BackTest(options);
 
             // assert
-            Assert.That(result == null, Is.False);
+            Assert.That(result.ResponseType == RESPONSE_TYPES.SUCCESS, Is.True);
         }
 
         [Test]
@@ -88,7 +88,7 @@ namespace BackTesterUnitTests
             var result = await _systemUnderTest.BackTest(options);
 
             // assert
-            Assert.That(result == null, Is.False);
+            Assert.That(result.ResponseType == RESPONSE_TYPES.SUCCESS, Is.True);
         }
     }
 }

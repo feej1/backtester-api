@@ -1,10 +1,44 @@
 
 using System.Text.Json.Serialization;
 using Backtesting.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Backtesting.Models
 {
 
+
+    public enum RESPONSE_TYPES
+    {
+        SUCCESS,
+        INVALID_SETTINGS,
+        INTERNAL_ERROR,
+    }
+
+    // rename along with class below
+    public class BacktestResult
+    {
+        public object ResultData;
+        public RESPONSE_TYPES? ResponseType;
+
+        public IActionResult GetHttpResponse()
+        {
+            switch(ResponseType)
+            {
+                case RESPONSE_TYPES.SUCCESS:
+                    return new JsonResult(ResultData);
+                case RESPONSE_TYPES.INVALID_SETTINGS:
+                    return new BadRequestObjectResult("Invalid Settings");
+                case RESPONSE_TYPES.INTERNAL_ERROR:
+                    return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                default:
+                    Console.WriteLine("Unimplemented Response type");
+                    throw new Exception("Unimplimented Response Type");
+            }
+        }
+    }
+
+    // rename along with class above
     public class BackTestingResponse
     {
         public Strategies Strategy;
