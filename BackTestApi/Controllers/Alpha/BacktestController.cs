@@ -49,9 +49,6 @@ namespace BackTest.Function
         public async Task<IActionResult> BuyAndHoldBacktest(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "alpha-v1.0/backtest/buyhold")] HttpRequest req)
         {
-            // get alpha advantage api key, null if not found
-            //var apiKey = req.Query["AlphaAdvantageApiKey"];
-
             // get settings from body and create 
             var options = JsonSerializer.Deserialize<BuyAndHoldSettings>(req.Body);
             
