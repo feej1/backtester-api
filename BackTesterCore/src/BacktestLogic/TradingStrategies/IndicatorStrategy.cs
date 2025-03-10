@@ -233,5 +233,4 @@ namespace Backtesting.Services
         protected abstract void UpdateIndicators();
 
     }
-
 }

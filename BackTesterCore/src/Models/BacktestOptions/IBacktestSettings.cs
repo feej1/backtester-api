@@ -7,7 +7,7 @@ namespace Backtesting.Models
 {
     public abstract class IBacktestSettings
     {
-        protected int SHORTEST_BACKTEST_LENGTH = 200;
+        protected int SHORTEST_BACKTEST_LENGTH = 31;
 
         protected IStockDataApiClient _apiClient;
 
