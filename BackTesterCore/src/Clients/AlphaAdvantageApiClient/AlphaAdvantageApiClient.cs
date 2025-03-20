@@ -40,8 +40,10 @@ namespace Backtesting.Clients
                 return null;
             }
 
-            var timeseries = JsonSerializer.Deserialize<AlphaAdvantageTimeSeriesDailyResponse>(response.Content.ReadAsStream());
-            return timeseries;
+            var respy = await response.Content.ReadAsStringAsync();
+            // var timeseries = JsonSerializer.Deserialize<AlphaAdvantageTimeSeriesDailyResponse>(response.Content.ReadAsStream());
+            // return timeseries;
+            return null;
 
         }
 

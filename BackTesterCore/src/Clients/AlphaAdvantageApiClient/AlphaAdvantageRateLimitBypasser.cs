@@ -28,7 +28,7 @@ namespace Backtesting.Clients
         public static string GetRandomIpAddress()
         {
             var ipString = "";
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < 3; i++)
             {
                 ipString += GetRandomDigitCharacter(255) + ".";
             }
