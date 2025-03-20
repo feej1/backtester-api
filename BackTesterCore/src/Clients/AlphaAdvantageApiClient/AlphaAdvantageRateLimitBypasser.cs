@@ -27,8 +27,9 @@ namespace Backtesting.Clients
         // X-Forwarded-For : 8.8.8.8   will bypass any rate limit
         public static string GetRandomIpAddress()
         {
-            var ipString = "";
-            for (var i = 0; i < 3; i++)
+            // initailize to 200 because it was being denied ~230 for first number sometimes
+            var ipString = GetRandomDigitCharacter(200);
+            for (var i = 0; i < 2; i++)
             {
                 ipString += GetRandomDigitCharacter(255) + ".";
             }
