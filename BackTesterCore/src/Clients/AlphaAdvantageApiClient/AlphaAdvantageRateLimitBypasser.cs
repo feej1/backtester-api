@@ -28,7 +28,7 @@ namespace Backtesting.Clients
         public static string GetRandomIpAddress()
         {
             // initailize to 200 because it was being denied ~230 for first number sometimes
-            var ipString = GetRandomDigitCharacter(200);
+            var ipString = GetRandomDigitCharacter(200) + ".";
             for (var i = 0; i < 2; i++)
             {
                 ipString += GetRandomDigitCharacter(255) + ".";
