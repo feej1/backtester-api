@@ -46,8 +46,6 @@ namespace BackTest.Function
                 EndDate = DateTime.Parse("2022-01-01"),
                 AssetToTrackTicker = "SPXL",
                 AssetToTradeTicker = "SPXL",
-                StaticHoldingTicker = "SPXS",
-                StopLossPercentage = null,
                 ShortTermEma = 12,
                 LongTermEma = 26,
                 MacdSignalLine = 9,
