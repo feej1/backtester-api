@@ -9,7 +9,20 @@ public static class StockDataClientResolver
         return new SampleDataClient();
     }
 
-    public static IStockDataApiClient GetApiClient(string alphaAdvantageApiKey)
+    public static IStockDataApiClient GetAlphaAdvantageClient()
+    {
+        var baseUrl = Environment.GetEnvironmentVariable("AlphaAdvantageApiClientSettingsApiBaseUrl");
+        var alphaAdvantageApiSetting = new AlphaAdvantageApiClientSettings()
+        {
+            ApiBaseUrl = baseUrl,
+            ApiKey = AlphaAdvantageRateLimitBypasser.GetRandomApiKey()
+        };
+
+        return new AlphaAdvantageClient(alphaAdvantageApiSetting);
+
+    }
+
+    public static IStockDataApiClient GetApiClient()
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 
@@ -22,7 +35,7 @@ public static class StockDataClientResolver
         var alphaAdvantageApiSetting = new AlphaAdvantageApiClientSettings()
         {
             ApiBaseUrl = baseUrl,
-            ApiKey = alphaAdvantageApiKey
+            ApiKey = AlphaAdvantageRateLimitBypasser.GetRandomApiKey()
         };
 
         return new AlphaAdvantageClient(alphaAdvantageApiSetting);

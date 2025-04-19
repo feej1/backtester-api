@@ -39,7 +39,7 @@ namespace Backtesting.Services
             var dateTime = isTradingOver ? FinalTradingDay : TradingDaysIterator.Current;
             var currentPortfolioValue = new PortfolioValue()
             {
-                Date = TradingDaysIterator.Current.UnixTimestampFromDateTime()
+                Date = dateTime.UnixTimestampFromDateTime()
             };
 
             if (StrategyPortfolio.OwnsAnyStock())
@@ -49,8 +49,10 @@ namespace Backtesting.Services
                 var ownedStock = StrategyPortfolio.GetAmountOfStockOwned(Options.AssetToTradeTicker);
                 currentPortfolioValue.Value = assetToTradeDataPoint.AdjustedClose * ownedStock;
             }
+            else {
+                currentPortfolioValue.Value = StrategyPortfolio.GetBuyingPower();
+            }
 
-            currentPortfolioValue.Value = StrategyPortfolio.GetBuyingPower();
             PortfolioValues.Add(currentPortfolioValue);
         }
 

@@ -21,6 +21,9 @@ namespace Backtesting.Clients
             {
                 BaseAddress = new Uri(_settings.ApiBaseUrl)
             };
+            var ip =  AlphaAdvantageRateLimitBypasser.GetRandomIpAddress();
+            Console.WriteLine("Mocked ip: " + ip);
+            _httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", ip);
         }
 
         public async Task<AlphaAdvantageTimeSeriesDailyResponse> GetTimeSeriesDaily(string tkr)
@@ -41,7 +44,6 @@ namespace Backtesting.Clients
 
             var timeseries = JsonSerializer.Deserialize<AlphaAdvantageTimeSeriesDailyResponse>(response.Content.ReadAsStream());
             return timeseries;
-
         }
 
         public async Task<AlphaAdvantageStockSplitResponse> GetStockSplits(string tkr)

@@ -30,8 +30,6 @@ namespace BackTesterUnitTests
                 EndDate = DateTime.Parse("01/01/2022"),
                 AssetToTrackTicker = "SPXL",
                 AssetToTradeTicker = "SPXL",
-                StaticHoldingTicker = "",
-                StopLossPercentage = null,
                 ShortTermEma = 12,
                 LongTermEma = 26,
                 MacdSignalLine = 9,
@@ -43,7 +41,7 @@ namespace BackTesterUnitTests
             var result = await _systemUnderTest.BackTest(options);
 
             // assert
-            Assert.That(result == null, Is.False);
+            Assert.That(result.ResponseType == RESPONSE_TYPES.SUCCESS, Is.True);
         }
 
         [Test]
@@ -56,8 +54,6 @@ namespace BackTesterUnitTests
                 EndDate = DateTime.Parse("01/01/2022"),
                 AssetToTrackTicker = "SPXL",
                 AssetToTradeTicker = "SPXL",
-                StaticHoldingTicker = "",
-                StopLossPercentage = 7,
                 ShortTermMva = 12,
                 LongTermMva = 26,
                 Strategy = Strategies.MOVING_AVERAGE_CROSS
@@ -68,7 +64,7 @@ namespace BackTesterUnitTests
             var result = await _systemUnderTest.BackTest(options);
 
             // assert
-            Assert.That(result == null, Is.False);
+            Assert.That(result.ResponseType == RESPONSE_TYPES.SUCCESS, Is.True);
         }
 
         [Test]
@@ -88,7 +84,7 @@ namespace BackTesterUnitTests
             var result = await _systemUnderTest.BackTest(options);
 
             // assert
-            Assert.That(result == null, Is.False);
+            Assert.That(result.ResponseType == RESPONSE_TYPES.SUCCESS, Is.True);
         }
     }
 }

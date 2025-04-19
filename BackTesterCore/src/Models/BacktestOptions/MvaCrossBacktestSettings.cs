@@ -19,8 +19,7 @@ namespace Backtesting.Models
         public override bool AreValid()
         {
             if (!this.IsValidTicker(AssetToTradeTicker) ||
-            (this.ShouldHoldAssetBetweenTrades() && !this.IsValidTicker(StaticHoldingTicker) )||
-            !this.IsValidTicker(AssetToTradeTicker))
+            !this.IsValidTicker(AssetToTrackTicker))
             {
                 return false;
             }

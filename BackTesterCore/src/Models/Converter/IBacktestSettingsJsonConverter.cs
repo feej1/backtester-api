@@ -23,6 +23,9 @@ namespace Backtesting.Models
                 case Strategies.MOVING_AVERAGE_CROSS:
                     writer.WriteRawValue(JsonSerializer.Serialize((MvaCrossBacktestSettings)settings));
                     break;
+                case Strategies.BUY_AND_HOLD:
+                    writer.WriteRawValue(JsonSerializer.Serialize((BuyAndHoldSettings)settings));
+                    break;
                 default:
                     throw new NotImplementedException($"Coversion to string from {settings.Strategy} is not implimented");
             }

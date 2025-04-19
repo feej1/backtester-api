@@ -7,7 +7,7 @@ namespace Backtesting.Models
 {
     public abstract class IBacktestSettings
     {
-        protected int SHORTEST_BACKTEST_LENGTH = 200;
+        protected int SHORTEST_BACKTEST_LENGTH = 31;
 
         protected IStockDataApiClient _apiClient;
 
@@ -28,6 +28,14 @@ namespace Backtesting.Models
             _apiClient = apiClient;
         }
 
+        protected void CheckApiClient()
+        {
+            if (_apiClient == null)
+            {
+                _apiClient = StockDataClientResolver.GetApiClient();    
+            }
+        }
+
         protected bool IsValidTicker(string ticker)
         {
             var rx = new Regex(@"^[a-zA-Z]{1,5}$");
@@ -36,16 +44,19 @@ namespace Backtesting.Models
 
         public async Task<TimeSeries> GetTradingAssetTimeSeries()
         {
+            CheckApiClient();
             return (await _apiClient.GetTimeSeriesDaily(AssetToTradeTicker)).ToTimeSeriesDataModel();
         }
 
         public async Task<StockSplit> GetTradingAssetStockSplits()
         {
+            CheckApiClient();
             return (await _apiClient.GetStockSplits(AssetToTradeTicker)).ToStockSplitDataModel();
         }
 
         public async Task<List<AlphaAdvantageDividendPayoutData>> GetTradingAssetDividendPayouts()
         {
+            CheckApiClient();
             return (await _apiClient.GetDividendPayouts(AssetToTradeTicker)).Data;
         }
 

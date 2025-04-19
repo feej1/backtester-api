@@ -1,10 +1,44 @@
 
 using System.Text.Json.Serialization;
 using Backtesting.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Backtesting.Models
 {
 
+
+    public enum RESPONSE_TYPES
+    {
+        SUCCESS,
+        INVALID_SETTINGS,
+        INTERNAL_ERROR,
+    }
+
+    // rename along with class below
+    public class BacktestResult
+    {
+        public object ResultData;
+        public RESPONSE_TYPES? ResponseType;
+
+        public IActionResult GetHttpResponse()
+        {
+            switch(ResponseType)
+            {
+                case RESPONSE_TYPES.SUCCESS:
+                    return new JsonResult(ResultData);
+                case RESPONSE_TYPES.INVALID_SETTINGS:
+                    return new BadRequestObjectResult("Invalid Settings");
+                case RESPONSE_TYPES.INTERNAL_ERROR:
+                    return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                default:
+                    Console.WriteLine("Unimplemented Response type");
+                    throw new Exception("Unimplimented Response Type");
+            }
+        }
+    }
+
+    // rename along with class above
     public class BackTestingResponse
     {
         public Strategies Strategy;
@@ -50,22 +84,22 @@ namespace Backtesting.Models
 
         public BacktestMetrics(DateTime startDate, DateTime endDate, double startingCash)
         {
-            NetProfitPercentage = new BacktestMetric(MetricNames.NetProfitPercentage, 0);
-            WinRate = new BacktestMetric(MetricNames.WinRate, 0);
-            ProfitFactor = new BacktestMetric(MetricNames.ProfitFactor, 0);
-            MaximumDrawdownPercent = new BacktestMetric(MetricNames.MaximumDrawdownPercent, 0);
-            NumberOfTrades = new BacktestMetric(MetricNames.NumberOfTrades, 0);
-            PercentTimeInvested = new BacktestMetric(MetricNames.PercentTimeInvested, 0);
+            NetProfitPercentage = new BacktestMetric(MetricNames.NetProfitPercentage, 0, METRIC_TYPE.OVERALL);
+            WinRate = new BacktestMetric(MetricNames.WinRate, 0, METRIC_TYPE.OVERALL);
+            ProfitFactor = new BacktestMetric(MetricNames.ProfitFactor, 0, METRIC_TYPE.OVERALL);
+            MaximumDrawdownPercent = new BacktestMetric(MetricNames.MaximumDrawdownPercent, 0, METRIC_TYPE.OVERALL);
+            NumberOfTrades = new BacktestMetric(MetricNames.NumberOfTrades, 0, METRIC_TYPE.OVERALL);
+            PercentTimeInvested = new BacktestMetric(MetricNames.PercentTimeInvested, 0, METRIC_TYPE.OVERALL);
 
-            NumberOfWinningTrades = new BacktestMetric(MetricNames.NumberOfWinningTrades, 0);
-            AverageProfitPercent = new BacktestMetric(MetricNames.AverageProfitPercent, 0);
-            MaxConsecutiveWins = new BacktestMetric(MetricNames.MaxConsecutiveWins, 0);
-            LargestWinPercentage = new BacktestMetric(MetricNames.LargestWinPercentage, 0);
+            NumberOfWinningTrades = new BacktestMetric(MetricNames.NumberOfWinningTrades, 0, METRIC_TYPE.WINS);
+            AverageProfitPercent = new BacktestMetric(MetricNames.AverageProfitPercent, 0, METRIC_TYPE.WINS);
+            MaxConsecutiveWins = new BacktestMetric(MetricNames.MaxConsecutiveWins, 0, METRIC_TYPE.WINS);
+            LargestWinPercentage = new BacktestMetric(MetricNames.LargestWinPercentage, 0, METRIC_TYPE.WINS);
 
-            NumberOfLosingTrades = new BacktestMetric(MetricNames.NumberOfLosingTrades, 0);
-            AverageLossPercent = new BacktestMetric(MetricNames.AverageLossPercent, 0);
-            MaxConsecutiveLosses = new BacktestMetric(MetricNames.MaxConsecutiveLosses, 0);
-            LargestLossPercentage = new BacktestMetric(MetricNames.LargestLossPercent, 0);
+            NumberOfLosingTrades = new BacktestMetric(MetricNames.NumberOfLosingTrades, 0, METRIC_TYPE.LOSSES);
+            AverageLossPercent = new BacktestMetric(MetricNames.AverageLossPercent, 0, METRIC_TYPE.LOSSES);
+            MaxConsecutiveLosses = new BacktestMetric(MetricNames.MaxConsecutiveLosses, 0, METRIC_TYPE.LOSSES);
+            LargestLossPercentage = new BacktestMetric(MetricNames.LargestLossPercent, 0, METRIC_TYPE.LOSSES);
 
             MetricList = [NetProfitPercentage, WinRate, ProfitFactor, MaximumDrawdownPercent, NumberOfTrades, PercentTimeInvested,
                             NumberOfWinningTrades, AverageProfitPercent, MaxConsecutiveWins, LargestWinPercentage,
@@ -278,19 +312,29 @@ namespace Backtesting.Models
 
     }
 
+    public enum METRIC_TYPE 
+    {
+        OVERALL = 0,
+        WINS,
+        LOSSES
+    }
+
     public class BacktestMetric 
     {
 
-        public BacktestMetric(string name){
+        public BacktestMetric(string name, METRIC_TYPE type){
             MetricValue = 0;
             MetricDisplayName = name;
+            MetricType = type;
         }
 
-        public BacktestMetric(string name, double value){
+        public BacktestMetric(string name, double value, METRIC_TYPE type){
             MetricValue = value;
             MetricDisplayName = name;
+            MetricType = type;
         }
 
+        public METRIC_TYPE MetricType {get; set;}
         public string MetricDisplayName {get; set;}
         public double MetricValue {get; set;}
     }
